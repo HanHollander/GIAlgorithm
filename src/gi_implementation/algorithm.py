@@ -27,22 +27,22 @@ def graph_isomorphism(g: 'Graph', h: 'Graph'):
         # Set a variable used for breaking out of two loops at once
         doublebreak = False
         # Iterate over all the vertices in the first found non bijective partition
-        for vertex in partitions[non_bijective_colour]:
+        for vertex_a in partitions[non_bijective_colour]:
             # If the vertex is in the component of the new graph that previously (before combining) was one graph (g)
-            if vertex in division[0]:
-                g_vertex = vertex
+            if vertex_a in division[0]:
+                g_vertex = vertex_a
                 # Iterate over all the vertices in the first found non bijective partition again
-                for vertex in partitions[non_bijective_colour]:
+                for vertex_b in partitions[non_bijective_colour]:
                     # If the vertex is now in the other graph (h)
-                    if vertex in division[1]:
-                        h_vertex = vertex
+                    if vertex_b in division[1]:
+                        h_vertex = vertex_b
                         # Change the labels of the g_vertex and h_vertex
                         h_vertex.label, g_vertex.label = max_colour, max_colour
                         # Colourize the new graph
                         new_colouring_dict, new_partitions, new_max_colour = colourize(combined_graph, False)
                         # Update the labels
-                        for vertex in combined_graph:
-                            vertex.label = new_colouring_dict[vertex]
+                        for vertex_c in combined_graph:
+                            vertex_c.label = new_colouring_dict[vertex_c]
                         # Check if the new graph is balanced
                         if balanced(new_partitions, division):
                             # If balanced, update variables and break out of for-loops
@@ -53,8 +53,8 @@ def graph_isomorphism(g: 'Graph', h: 'Graph'):
                             break
                         else:
                             # If not balanced, revert the changes
-                            for vertex in combined_graph:
-                                vertex.label = old_colouring_dict[vertex]
+                            for vertex_d in combined_graph:
+                                vertex_d.label = old_colouring_dict[vertex_d]
                 if doublebreak:
                     break
     # The graphs are isomorphic if the partitions are balanced and bijective at the end of the loop
