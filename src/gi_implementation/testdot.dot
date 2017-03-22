@@ -1,0 +1,17 @@
+graph G {
+    0 [penwidth=3,label="0"]
+    1 [penwidth=3,label="1"]
+    2 [penwidth=3,label="2"]
+    3 [penwidth=3,label="3"]
+    4 [penwidth=3,label="4"]
+    5 [penwidth=3,label="5"]
+    6 [penwidth=3,label="6"]
+
+    0--1 [penwidth=2,label="None"]
+    1--2 [penwidth=2,label="None"]
+    2--3 [penwidth=2,label="None"]
+    3--4 [penwidth=2,label="None"]
+    2--4 [penwidth=2,label="None"]
+    4--5 [penwidth=2,label="None"]
+    5--6 [penwidth=2,label="None"]
+}
