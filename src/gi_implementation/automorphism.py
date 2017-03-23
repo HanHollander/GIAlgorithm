@@ -4,6 +4,7 @@ from graphs.graph_io import *
 import os
 import collections
 import time
+import math
 
 
 def graph_isomorphism(g: 'Graph', h: 'Graph'):
@@ -15,7 +16,7 @@ def graph_isomorphism(g: 'Graph', h: 'Graph'):
     for vertex in combined_graph:
         vertex.label = colouring_dict[vertex]
     result, total_automorphisms = recursion(colouring_dict, combined_graph, division, max_colour, partitions)
-    return combined_graph, result, total_automorphisms
+    return combined_graph, result, int(math.sqrt(total_automorphisms))
 
 
 def recursion(colouring_dict, combined_graph, division, max_colour, partitions):
@@ -283,6 +284,6 @@ def test2(filepathname):
     print(">total time:", total_end_time - total_start_time)
     print(">isomorphism classes:", classes)
 
-test2('tr24.grl')
+test2('agInet.grl')
 # test git
 
