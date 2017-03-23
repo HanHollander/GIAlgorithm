@@ -292,7 +292,7 @@ def test2(filepathname):
     print(">total time:", total_end_time - total_start_time)
     print(">isomorphism classes:", classes)
 
-test2('eg4_7.grl')
+test2('agInet.grl')
 
 # test git
 
