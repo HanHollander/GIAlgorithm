@@ -1,3 +1,5 @@
+import math
+
 from gi_implementation.colourization import colourize
 from graphs.graph import *
 from graphs.graph_io import *
@@ -18,6 +20,7 @@ def graph_isomorphism(g: 'Graph', h: 'Graph'):
         vertex.label = colouring_dict[vertex]
     # If the graph is not bijective but balanced, we can branch
     while not bijective(partitions) and balanced(partitions, division):
+        print('dinkie', len(partitions), max_colour)
         # Find the first non bijective partition
         # TODO optimize this by doing it in bijective() function, already iterating over it there
         old_colouring_dict = colouring_dict
@@ -69,10 +72,13 @@ def graph_isomorphism(g: 'Graph', h: 'Graph'):
                 vertex_e.label = colouring_dict[vertex_e]
             if partition_automorphisms > 0:
                 total_automorphisms = total_automorphisms * partition_automorphisms
+                print(total_automorphisms)
+        else:
+            return combined_graph, False, int(math.sqrt(total_automorphisms))
 
     # The graphs are isomorphic if the partitions are balanced and bijective at the end of the loop
     result = bijective(partitions) and balanced(partitions, division)
-    return combined_graph, result, total_automorphisms
+    return combined_graph, result, int(math.sqrt(total_automorphisms))
 
 
 def bijective(partitions):
@@ -306,7 +312,7 @@ def test2(filepathname):
     print(">total time:", total_end_time - total_start_time)
     print(">isomorphism classes:", classes)
 
-test2('agInet.grl')
+test2('tr24.grl')
 
 # test git
 

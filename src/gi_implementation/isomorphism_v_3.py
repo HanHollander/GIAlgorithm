@@ -285,6 +285,6 @@ def test2(filepathname):
     print(">total time:", total_end_time - total_start_time)
     print(">isomorphism classes:", classes)
 
-test2('agInet.grl')
+test2('tr24.grl')
 # test git
 
