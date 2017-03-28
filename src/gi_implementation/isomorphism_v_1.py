@@ -5,6 +5,7 @@ import os
 import collections
 import time
 
+# SIMPLE ISOMORPHISM DETECTION - not efficient colourization
 
 def graph_isomorphism(g: 'Graph', h: 'Graph'):
     # Combine the two graphs to one graph with two components
