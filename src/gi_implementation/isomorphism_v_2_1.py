@@ -1,14 +1,16 @@
+import math
+
 from gi_implementation.colourization import colourize
 from graphs.graph import *
 from graphs.graph_io import *
 import os
 import collections
 import time
-import math
 
-# RECURSIVE AUTOMORPHISM COUNTER AND ISOMORPHISM CHECKER - not efficient
+# NON RECURSIVE AUTOMORPHISM COUNTER AND ISOMORPHISM CHECKER - not efficient colourization
 
 def graph_isomorphism(g: 'Graph', h: 'Graph'):
+    total_automorphisms = 1
     # Combine the two graphs to one graph with two components
     combined_graph, division = add_graphs(g, h)
     # Do an initial colouring based on degree and colourize
@@ -16,42 +18,65 @@ def graph_isomorphism(g: 'Graph', h: 'Graph'):
     # Update the graph labels in the combined graph
     for vertex in combined_graph:
         vertex.label = colouring_dict[vertex]
-    result, total_automorphisms = recursion(colouring_dict, combined_graph, division, max_colour, partitions)
-    return combined_graph, result, int(math.sqrt(total_automorphisms))
-
-
-def recursion(colouring_dict, combined_graph, division, max_colour, partitions):
-    if bijective(partitions) and balanced(partitions, division):
-        return True, 1
-    else:
+    # If the graph is not bijective but balanced, we can branch
+    while not bijective(partitions) and balanced(partitions, division):
+        # Find the first non bijective partition
+        # TODO optimize this by doing it in bijective() function, already iterating over it there
         old_colouring_dict = colouring_dict
         non_bijective_colour = ""
         for colour in partitions:
             if len(partitions[colour]) != 2:
                 non_bijective_colour = colour
                 break
+        # Set a variable used for breaking out of two loops at once
+        doublebreak = False
+        last_stable_partitions = None
+        last_stable_max_colour = None
+        last_stable_colouring_dict = None
         partition_automorphisms = 0
-        result = False
+        # Iterate over all the vertices in the first found non bijective partition
         for vertex_a in partitions[non_bijective_colour]:
+            # If the vertex is in the component of the new graph that previously (before combining) was one graph (g)
             if vertex_a in division[0]:
                 g_vertex = vertex_a
+                # Iterate over all the vertices in the first found non bijective partition again
                 for vertex_b in partitions[non_bijective_colour]:
+                    # If the vertex is now in the other graph (h)
                     if vertex_b in division[1]:
                         h_vertex = vertex_b
+                        # Change the labels of the g_vertex and h_vertex
                         h_vertex.label, g_vertex.label = max_colour, max_colour
+                        # Colourize the new graph
                         new_colouring_dict, new_partitions, new_max_colour = colourize(combined_graph, False)
+                        # Update the labels
                         for vertex_c in combined_graph:
                             vertex_c.label = new_colouring_dict[vertex_c]
+                        # Check if the new graph is balanced
                         if balanced(new_partitions, division):
-                            rec_result, automorphisms = recursion(new_colouring_dict, combined_graph, division,
-                                                                  new_max_colour, new_partitions)
-                            partition_automorphisms += automorphisms
-                            result = result or rec_result
-                        for vertex_d in combined_graph:  # revert changes
-                            vertex_d.label = old_colouring_dict[vertex_d]
+                            # If balanced, update variables and break out of for-loops
+                            last_stable_partitions = new_partitions
+                            last_stable_max_colour = new_max_colour
+                            last_stable_colouring_dict = new_colouring_dict
+                            partition_automorphisms += 1
 
-        # The graphs are isomorphic if the partitions are balanced and bijective at the end of the loop
-        return result, partition_automorphisms
+                        # If not balanced, revert the changes
+                        for vertex_d in combined_graph:
+                            vertex_d.label = old_colouring_dict[vertex_d]
+        if last_stable_partitions is not None:
+            partitions = last_stable_partitions
+            max_colour = last_stable_max_colour
+            colouring_dict = last_stable_colouring_dict
+            # Update the labels
+            for vertex_e in combined_graph:
+                vertex_e.label = colouring_dict[vertex_e]
+            if partition_automorphisms > 0:
+                total_automorphisms = total_automorphisms * partition_automorphisms
+        else:
+            return combined_graph, False, int(math.sqrt(total_automorphisms))
+
+    # The graphs are isomorphic if the partitions are balanced and bijective at the end of the loop
+    result = bijective(partitions) and balanced(partitions, division)
+    return combined_graph, result, int(math.sqrt(total_automorphisms))
 
 
 def bijective(partitions):
@@ -286,5 +311,6 @@ def test2(filepathname):
     print(">isomorphism classes:", classes)
 
 test2('cubes5.grl')
+
 # test git
 
