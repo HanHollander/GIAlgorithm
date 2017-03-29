@@ -26,12 +26,17 @@ def graph_isomorphism(g: 'Graph', h: 'Graph'):
         inqueue.append(colour)
     # While there are still unchecked partitions in the queue
     while len(queue) != 0:
-        print(len(queue))
+        print("------------------------------------------")
+        print("Queue length",len(queue))
+        print("Queue =", queue)
+        print("Inqueue", inqueue)
+        print("Refining on color", queue[0])
         # Refine on partition
         partitions, colouring_dict, max_colour, add_to_queue = refine(queue[0], partitions, colouring_dict, max_colour,
                                                                       inqueue)
         for new_queue_member in add_to_queue:
             queue.append(new_queue_member)
+            inqueue.append(new_queue_member) # <------ ADDED DIS
 
         queue.popleft()
 
@@ -44,6 +49,8 @@ def refine(refining_colour, partitions, colouring_dict, max_colour, inqueue):
     new_colouring_dict = colouring_dict.copy()
     new_max_colour = max_colour
     add_to_queue = []
+
+    DEBUGLIST = []  # <------ DEBUG
     for splitting_colour in partitions:
         #print("started colour", splitting_colour)
         if splitting_colour != refining_colour:
@@ -81,6 +88,7 @@ def refine(refining_colour, partitions, colouring_dict, max_colour, inqueue):
                     new_partitions[splitting_colour] = sub_partition
                     if not sc_in_inqueue:
                         add_to_queue.append(splitting_colour)
+                    DEBUGLIST.append(splitting_colour) # <----- DEBUG
                 else:
                     new_max_colour += 1
                     new_partitions[new_max_colour] = sub_partition
@@ -88,15 +96,12 @@ def refine(refining_colour, partitions, colouring_dict, max_colour, inqueue):
                         new_vertex.label = new_max_colour
                         new_colouring_dict[new_vertex] = new_max_colour
                     add_to_queue.append(new_max_colour)
-
+                    DEBUGLIST.append(new_max_colour)
 
                 i += 1
 
-
-
-
-
-    print(add_to_queue)
+    print("Resulting sub partitions: ", DEBUGLIST)
+    print("Add to queue: ", add_to_queue)
 
     return new_partitions, new_colouring_dict, new_max_colour, add_to_queue
 
