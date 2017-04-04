@@ -1,5 +1,3 @@
-import math
-
 from gi_implementation.colourization import colourize
 from graphs.graph import *
 from graphs.graph_io import *
@@ -7,75 +5,111 @@ import os
 import collections
 import time
 
-# NON RECURSIVE AUTOMORPHISM COUNTER AND ISOMORPHISM CHECKER - not efficient colourization
+# SIMPLE ISOMORPHISM DETECTION - more efficient colourization
 
 def graph_isomorphism(g: 'Graph', h: 'Graph'):
-    total_automorphisms = 1
     # Combine the two graphs to one graph with two components
     combined_graph, division = add_graphs(g, h)
-    # Do an initial colouring based on degree and colourize
-    colouring_dict, partitions, max_colour = colourize(combined_graph, True)
+    # Do an initial colouring based on degree and colourize: get initial coarsest stable partition
+    rec_colouring_dict, rec_partitions, max_colour = colour_by_degree(combined_graph)
+    print("initial partitions:", len(rec_partitions))
     # Update the graph labels in the combined graph
-    for vertex in combined_graph:
-        vertex.label = colouring_dict[vertex]
-    # If the graph is not bijective but balanced, we can branch
-    while not bijective(partitions) and balanced(partitions, division):
-        print("dinkie")
-        # Find the first non bijective partition
-        # TODO optimize this by doing it in bijective() function, already iterating over it there
-        old_colouring_dict = colouring_dict
-        non_bijective_colour = ""
-        for colour in partitions:
-            if len(partitions[colour]) != 2:
-                non_bijective_colour = colour
-                break
-        # Set a variable used for breaking out of two loops at once
-        doublebreak = False
-        last_stable_partitions = None
-        last_stable_max_colour = None
-        last_stable_colouring_dict = None
-        partition_automorphisms = 0
-        g_vertex = partitions[non_bijective_colour][0]
-        # Iterate over all the vertices in the first found non bijective partition again
-        for vertex_b in partitions[non_bijective_colour]:
-            # If the vertex is now in the other graph (h)
-            if vertex_b in division[1]:
-                print("dinkie2")
-                h_vertex = vertex_b
-                # Change the labels of the g_vertex and h_vertex
-                h_vertex.label, g_vertex.label = max_colour, max_colour
-                # Colourize the new graph
-                new_colouring_dict, new_partitions, new_max_colour = colourize(combined_graph, False)
-                # Update the labels
-                for vertex_c in combined_graph:
-                    vertex_c.label = new_colouring_dict[vertex_c]
-                # Check if the new graph is balanced
-                if balanced(new_partitions, division):
-                    # If balanced, update variables and break out of for-loops
-                    last_stable_partitions = new_partitions
-                    last_stable_max_colour = new_max_colour
-                    last_stable_colouring_dict = new_colouring_dict
-                    partition_automorphisms += 1
+    for combined_vertex in combined_graph:
+        combined_vertex.label = rec_colouring_dict[combined_vertex]
+    # Create queue and fill
+    queue = collections.deque()
+    inqueue = []
+    partitions = rec_partitions
+    colouring_dict = rec_colouring_dict
+    for colour in partitions:
+        queue.append(colour)
+    # While there are still unchecked partitions in the queue
+    while len(queue) != 0:
+        print("------------------------------------------")
+        print("Queue length",len(queue))
+        print("Queue =", queue)
+        print("Refining on color", queue[0])
+        # Refine on partition
+        partitions, colouring_dict, max_colour, add_to_queue = refine(queue[0], partitions, colouring_dict, max_colour,
+                                                                      queue)
+        for new_queue_member in add_to_queue:
+            queue.append(new_queue_member)
 
-                # If not balanced, revert the changes
-                for vertex_d in combined_graph:
-                    vertex_d.label = old_colouring_dict[vertex_d]
-        if last_stable_partitions is not None:
-            partitions = last_stable_partitions
-            max_colour = last_stable_max_colour
-            colouring_dict = last_stable_colouring_dict
-            # Update the labels
-            for vertex_e in combined_graph:
-                vertex_e.label = colouring_dict[vertex_e]
-            if partition_automorphisms > 0:
-                total_automorphisms = total_automorphisms * partition_automorphisms
-        else:
-            return combined_graph, False, 0
+        queue.popleft()
 
     # The graphs are isomorphic if the partitions are balanced and bijective at the end of the loop
     result = bijective(partitions) and balanced(partitions, division)
-    return combined_graph, result, total_automorphisms
+    return combined_graph, result
 
+def refine(refining_colour, partitions, colouring_dict, max_colour, inqueue):
+    new_partitions = partitions.copy()
+    new_colouring_dict = colouring_dict.copy()
+    new_max_colour = max_colour
+    add_to_queue = []
+
+    DEBUGLIST = []  # <------ DEBUG
+    for splitting_colour in partitions:
+        #print("started colour", splitting_colour)
+        if splitting_colour != refining_colour:
+            splitting_partition = partitions[splitting_colour]
+            sub_partitions = dict()
+            # print(splitting_colour, len(partitions[splitting_colour]))
+            for splitting_vertex in splitting_partition:
+                #print("started vertices iteration", len(splitting_partition))
+                neighbours_in_ref_col = 0
+                for splitting_neighbour in splitting_vertex.neighbours:
+                    #TODO maybe int string shizzle perikelen
+                    if splitting_neighbour.label == refining_colour:
+                        neighbours_in_ref_col += 1
+                # print("(DEBUG) neighbours_in_ref_col", neighbours_in_ref_col)
+                if neighbours_in_ref_col in sub_partitions:
+                    sub_partitions[neighbours_in_ref_col].append(splitting_vertex)
+                else:
+                    sub_partitions[neighbours_in_ref_col] = [splitting_vertex]
+                    #print("added some new", len(sub_partitions), neighbours_in_ref_col)
+            # print("(DEBUG) splitting colour =", splitting_colour, "sub_partitions size =", len(sub_partitions))
+
+                #print(sub_partitions)
+
+            i = 0
+            largest_partition_size = 0
+            largest_partition_colour = 0
+
+            sc_in_inqueue = splitting_colour in inqueue
+            for amount_of_edges_to_reference_colour in sub_partitions:
+                sub_partition = sub_partitions[amount_of_edges_to_reference_colour]
+                if len(sub_partition) > largest_partition_size:
+                    largest_partition_size = len(sub_partition)
+                    largest_partition_colour = amount_of_edges_to_reference_colour
+
+            if (len(sub_partitions) > 1):
+                sc_in_inqueue = splitting_colour in inqueue
+                for amount_of_edges_to_reference_colour in sub_partitions:
+                    sub_partition = sub_partitions[amount_of_edges_to_reference_colour]
+                    print(amount_of_edges_to_reference_colour, len(sub_partition))
+                    if i == 0:
+                        new_partitions[splitting_colour] = sub_partition
+                        if not sc_in_inqueue and amount_of_edges_to_reference_colour != largest_partition_colour:
+                            add_to_queue.append(splitting_colour)
+                        DEBUGLIST.append(splitting_colour) # <----- DEBUG
+                    else:
+                        new_max_colour += 1
+                        new_partitions[new_max_colour] = sub_partition
+                        for new_vertex in sub_partition:
+                            new_vertex.label = new_max_colour
+                            new_colouring_dict[new_vertex] = new_max_colour
+                        if sc_in_inqueue:
+                            add_to_queue.append(new_max_colour)
+                        elif amount_of_edges_to_reference_colour != largest_partition_colour:
+                            add_to_queue.append(new_max_colour)
+                        DEBUGLIST.append(new_max_colour)
+
+                    i += 1
+
+    print("Resulting sub partitions: ", DEBUGLIST)
+    print("Add to queue: ", add_to_queue)
+
+    return new_partitions, new_colouring_dict, new_max_colour, add_to_queue
 
 def bijective(partitions):
     # Assume the partitions are bijective
@@ -167,7 +201,7 @@ def copy_graph(g):
     return copy
 
 
-def colourize(graph: 'Graph', recolour):
+def colour_by_degree(graph: 'Graph'):
     # Initialize storage for colourization dictionary (vertex -> colour) and partitions (colour -> [vertex])
     colouring_dict = dict()
     partitions = dict()
@@ -175,10 +209,7 @@ def colourize(graph: 'Graph', recolour):
     # Get the current max degree/colour and depending on 'recolour' variable, recolour all the vertices
     for vertex in graph.vertices:
         # First give every vertex a colour
-        if vertex.label != "" and not recolour:
-            degree = int(vertex.label)
-        else:
-            degree = len(vertex.neighbours)
+        degree = len(vertex.neighbours)
         colouring_dict[vertex] = degree
         # Now partition the vertices and get the max degree/colour
         if degree in partitions.keys():
@@ -188,65 +219,26 @@ def colourize(graph: 'Graph', recolour):
         if degree > max_degree:
             max_degree = degree
     # Use the max_degree + 1 as new colour (this colour is not yet in use)
-    current_colour = max_degree + 1
-    # Assume the partitioning is not yet stable
-    stable = False
-    # While it is not stable
-    while not stable:
-        # Remember the old colouring, in order to check afterwards if changes were made
-        old_colouring_dict = colouring_dict.copy()
-        # Iterate over the partitions (the lists of vertices)
-        for partition in partitions.values():
-            # Something only can happen if the partition size is larger than 1
-            if len(partition) > 1:
-                # Store the colours of the neighbours of the first vertex in a partition
-                reference_colours = []
-                for neighbour in partition[0].neighbours:
-                    reference_colours.append(colouring_dict[neighbour])
-                # Since a vertex is equivalent to itself, initialize the list with equivalent vertices with itself in it
-                equivalent_vertices = [partition[0]]
-                # Iterate over all the other vertices in the partition
-                for i in range(1, len(partition)):
-                    # Get the colours of the neighbours of the current vertex that is being iterated over
-                    current_vertex_colours = []
-                    for neighbour in partition[i].neighbours:
-                        current_vertex_colours.append(colouring_dict[neighbour])
-                    # If the current neighbour colours match the reference colours, add vertex to equivalent vertices
-                    if collections.Counter(reference_colours) == collections.Counter(current_vertex_colours):
-                        equivalent_vertices.append(partition[i])
-                # If not all vertices in the partition are equivalent (have equivalently coloured neighbourhoods)
-                if len(equivalent_vertices) != len(partition):
-                    # Create a new partition and update the vertex colours
-                    for vertex in equivalent_vertices:
-                        colouring_dict[vertex] = current_colour
-                        partition.remove(vertex)
-                    partitions[current_colour] = equivalent_vertices.copy()
-                    # Increment the "new" colour (for the next partition) by 1
-                    current_colour += 1
-                    # Break out of the for loop, so a stable check can be done
-                    break
-        # Check if stable, and if so, break out of the while loop
-        if colouring_dict == old_colouring_dict:
-            stable = True
+    current_colour = max_degree
     # Return colouring if the vertices, the partition and a new max colour
-    return colouring_dict, partitions, current_colour + 1
+    return colouring_dict, partitions, current_colour
 
 
 def test():
     d = os.path.dirname(__file__)
 
-    filename = os.path.join(d, 'tp640.gr')
+    filename = os.path.join(d, 'eg3.gr')
 
     with open(filename) as f:
         G = load_graph(f, Graph, False)
 
-    filename = os.path.join(d, 'tp640.gr')
+    filename = os.path.join(d, 'eg4.gr')
 
     with open(filename) as f:
         H = load_graph(f, Graph, False)
 
     start_time = time.time()
-    I, result, aut = graph_isomorphism(G, H)
+    I, result = graph_isomorphism(G, H)
     end_time = time.time()
     print("computation time:", end_time - start_time, "seconds")
 
@@ -256,7 +248,6 @@ def test():
         write_dot(I, f1)
 
     print("result =", result)
-    print("automorphisms =", aut)
 
 def test2(filepathname):
     d = os.path.dirname(__file__)
@@ -269,8 +260,8 @@ def test2(filepathname):
     pairs = []
     classes = []
     total_start_time = time.time()
-    for i in range(0, len(GL)):
-        for j in range(i + 1, len(GL)):
+    for i in range(0, 1): #range(0, len(GL)):
+        for j in range(2, 3): #range(i + 1, len(GL)):
             already_in_class = False
             for iso_class in classes:
                 if i in iso_class and j in iso_class:
@@ -279,7 +270,7 @@ def test2(filepathname):
             if already_in_class == False:
                 print("> compare", i, "and", j)
                 start_time = time.time()
-                I, result, aut = graph_isomorphism(GL[i], GL[j])
+                I, result = graph_isomorphism(GL[i], GL[j])
                 if result == True:
                     pair = [i, j]
                     pairs.append(pair)
@@ -303,15 +294,23 @@ def test2(filepathname):
                             classes.append(pair)
                 end_time = time.time()
                 print("-> computation time:", end_time - start_time, "seconds")
-                print("-> automorphisms:", aut)
                 print("-> result:", result, "\n")
     total_end_time = time.time()
     print(">total time:", total_end_time - total_start_time)
     print(">isomorphism classes:", classes)
-#
-# test()
-test2('eg4_1026.grl')
 
-# eg4_1026.grl
-# >total time: 18.395026922225952
-# >isomorphism classes: [[0, 1], [2, 3]]
+def test3():
+    d = os.path.dirname(__file__)
+
+    filename = os.path.join(d, "eg4_7.grl")
+
+    with open(filename) as f:
+        GL, options = load_graph(f, Graph, True)
+
+    I = GL[3]
+
+    with open("eg4_7DOT.dot",  'w') as df:
+        write_dot(I, df)
+
+test2('eg4_7.grl')
+test3()
