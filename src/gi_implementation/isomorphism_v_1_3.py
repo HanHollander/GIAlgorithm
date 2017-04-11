@@ -15,6 +15,7 @@ def graph_isomorphism(g: 'Graph', h: 'Graph'):
     # Update the graph labels in the combined graph
     for combined_vertex in combined_graph:
         combined_vertex.label = rec_colouring_dict[combined_vertex]
+
     if not bijective(rec_partitions) and balanced(rec_partitions, division):
         rec_partitions, rec_colouring_dict, max_colour = colourize(rec_colouring_dict, max_colour, rec_partitions)
     # print("initial partitions:", len(rec_partitions))
@@ -24,7 +25,6 @@ def graph_isomorphism(g: 'Graph', h: 'Graph'):
     colouring_dict = rec_colouring_dict
     # If the graph is not bijective but balanced, we can branch
     while not bijective(partitions) and balanced(partitions, division):
-        print("dinkie")
         # Find the first non bijective partition
         non_bijective_colour = ""
         for colour in partitions:
@@ -40,7 +40,6 @@ def graph_isomorphism(g: 'Graph', h: 'Graph'):
         for vertex_b in partitions[non_bijective_colour]:
             # If the vertex is now in the other graph (h)
             if vertex_b in division[1]:
-                print("dinkie2")
                 h_vertex = vertex_b
                 max_colour += 1
                 # Change the labels of the g_vertex and h_vertex
@@ -48,7 +47,7 @@ def graph_isomorphism(g: 'Graph', h: 'Graph'):
                 old_colouring_dict = colouring_dict.copy()
                 old_max_colour = max_colour
                 old_partitions = partitions.copy()
-                new_partitions, new_colouring_dict, new_max_colour = colourize(colouring_dict, max_colour, partitions)
+                new_partitions, new_colouring_dict, new_max_colour = colourize(colouring_dict, max_colour, partitions, max_colour)
                 # The graphs are isomorphic if the partitions are balanced and bijective at the end of the loop
 
                 # Check if the new graph is balanced
@@ -81,6 +80,8 @@ def graph_isomorphism(g: 'Graph', h: 'Graph'):
 
 
 def colourize(colouring_dict, max_colour, partitions, new_color=None):
+    print("[DEBUG] START colourize()")
+    start_time = time.time()
 
     biggest_partition_size = 0
     biggest_partition_colour = None
@@ -111,10 +112,14 @@ def colourize(colouring_dict, max_colour, partitions, new_color=None):
 
         queue.popleft()
 
+    print("[DEBUG] END colourize() (took", time.time() - start_time, "s)", len(inqueue),"refines   max_colour =", max_colour)
     return partitions, colouring_dict, max_colour
 
 
 def refine(refining_colour, partitions, colouring_dict, max_colour, inqueue):
+    print("\t[DEBUG] START refine()")
+    start_time = time.time()
+
     add_to_queue = []
 
     splitting_colours = []
@@ -176,9 +181,12 @@ def refine(refining_colour, partitions, colouring_dict, max_colour, inqueue):
 
                 i += 1
 
+    print("\t[DEBUG] END refine() (took", time.time() - start_time, "s)")
     return partitions, colouring_dict, max_colour, add_to_queue
 
 def bijective(partitions):
+    print("[DEBUG] START bijective()")
+    start_time = time.time()
     # Assume the partitions are bijective
     is_bijective = True
     # Now iterate over the partitions
@@ -187,10 +195,13 @@ def bijective(partitions):
         if len(partitions[colour]) != 2:
             is_bijective = False
             break
+    print("[DEBUG] END bijective() (took", time.time() - start_time, "s)")
     return is_bijective
 
 
 def balanced(partitions, division):
+    print("[DEBUG] START balanced()")
+    start_time = time.time()
     # Assume the partitions are balanced
     is_balanced = True
     # Now iterate over the partitions
@@ -214,6 +225,7 @@ def balanced(partitions, division):
             if g != h:
                 is_balanced = False
                 break
+    print("[DEBUG] END balanced() (took", time.time() - start_time, "s)")
     return is_balanced
 
 
@@ -294,12 +306,12 @@ def colour_by_degree(graph: 'Graph'):
 def test():
     d = os.path.dirname(__file__)
 
-    filename = os.path.join(d, 'tp640.gr')
+    filename = os.path.join(d, 'tp320.gr')
 
     with open(filename) as f:
         G = load_graph(f, Graph, False)
 
-    filename = os.path.join(d, 'tp640.gr')
+    filename = os.path.join(d, 'tp320.gr')
 
     with open(filename) as f:
         H = load_graph(f, Graph, False)
@@ -382,8 +394,8 @@ def test3():
     with open("eg4_7DOT.dot",  'w') as df:
         write_dot(I, df)
 
-test()
-# test2('tp2560.grl')
+# test()
+test2('eg4_1026.grl')
 # eg4_1026.grl
 # >total time: 235.28841519355774
 # >isomorphism classes: [[0, 1], [2, 3]]

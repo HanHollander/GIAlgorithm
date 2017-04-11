@@ -8,6 +8,7 @@ import collections
 import time
 
 # NON RECURSIVE AUTOMORPHISM COUNTER AND ISOMORPHISM CHECKER - not efficient colourization
+# Best working version
 
 def graph_isomorphism(g: 'Graph', h: 'Graph'):
     total_automorphisms = 1
@@ -20,28 +21,31 @@ def graph_isomorphism(g: 'Graph', h: 'Graph'):
         vertex.label = colouring_dict[vertex]
     # If the graph is not bijective but balanced, we can branch
     while not bijective(partitions) and balanced(partitions, division):
-        print("dinkie")
         # Find the first non bijective partition
-        # TODO optimize this by doing it in bijective() function, already iterating over it there
         old_colouring_dict = colouring_dict
         non_bijective_colour = ""
         for colour in partitions:
             if len(partitions[colour]) != 2:
                 non_bijective_colour = colour
                 break
-        # Set a variable used for breaking out of two loops at once
-        doublebreak = False
+
         last_stable_partitions = None
         last_stable_max_colour = None
         last_stable_colouring_dict = None
         partition_automorphisms = 0
+
+        # Pick a vertex in the non bijective partition of graph g
         g_vertex = partitions[non_bijective_colour][0]
-        # Iterate over all the vertices in the first found non bijective partition again
+        nr = 1
+        while g_vertex not in division[0]:
+            g_vertex = partitions[non_bijective_colour][nr]
+            nr += 1
+
+        # For every vertex in the non bijective partition of graph h
         for vertex_b in partitions[non_bijective_colour]:
-            # If the vertex is now in the other graph (h)
             if vertex_b in division[1]:
-                print("dinkie2")
                 h_vertex = vertex_b
+
                 # Change the labels of the g_vertex and h_vertex
                 h_vertex.label, g_vertex.label = max_colour, max_colour
                 # Colourize the new graph
@@ -49,6 +53,7 @@ def graph_isomorphism(g: 'Graph', h: 'Graph'):
                 # Update the labels
                 for vertex_c in combined_graph:
                     vertex_c.label = new_colouring_dict[vertex_c]
+
                 # Check if the new graph is balanced
                 if balanced(new_partitions, division):
                     # If balanced, update variables and break out of for-loops
@@ -57,9 +62,11 @@ def graph_isomorphism(g: 'Graph', h: 'Graph'):
                     last_stable_colouring_dict = new_colouring_dict
                     partition_automorphisms += 1
 
-                # If not balanced, revert the changes
+                # Revert the changes so we can look for more stable options
                 for vertex_d in combined_graph:
                     vertex_d.label = old_colouring_dict[vertex_d]
+
+        # If a stable option was found
         if last_stable_partitions is not None:
             partitions = last_stable_partitions
             max_colour = last_stable_max_colour
@@ -67,6 +74,8 @@ def graph_isomorphism(g: 'Graph', h: 'Graph'):
             # Update the labels
             for vertex_e in combined_graph:
                 vertex_e.label = colouring_dict[vertex_e]
+
+            # Update the automorphisms counter
             if partition_automorphisms > 0:
                 total_automorphisms = total_automorphisms * partition_automorphisms
         else:
@@ -74,6 +83,9 @@ def graph_isomorphism(g: 'Graph', h: 'Graph'):
 
     # The graphs are isomorphic if the partitions are balanced and bijective at the end of the loop
     result = bijective(partitions) and balanced(partitions, division)
+    if not result:
+        total_automorphisms = 0
+
     return combined_graph, result, total_automorphisms
 
 
@@ -232,15 +244,15 @@ def colourize(graph: 'Graph', recolour):
     return colouring_dict, partitions, current_colour + 1
 
 
-def test():
+def test(filepathname):
     d = os.path.dirname(__file__)
 
-    filename = os.path.join(d, 'tp640.gr')
+    filename = os.path.join(d, filepathname)
 
     with open(filename) as f:
         G = load_graph(f, Graph, False)
 
-    filename = os.path.join(d, 'tp640.gr')
+    filename = os.path.join(d, filepathname)
 
     with open(filename) as f:
         H = load_graph(f, Graph, False)
@@ -309,8 +321,8 @@ def test2(filepathname):
     print(">total time:", total_end_time - total_start_time)
     print(">isomorphism classes:", classes)
 #
-# test()
-test2('eg4_1026.grl')
+test('bonusAut1.gr')
+# test2('bigtrees1.grl')
 
 # eg4_1026.grl
 # >total time: 18.395026922225952
