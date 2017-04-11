@@ -394,6 +394,9 @@ def test3():
     with open("eg4_7DOT.dot",  'w') as df:
         write_dot(I, df)
 
+
+
+
 # test()
 test2('eg4_1026.grl')
 # eg4_1026.grl

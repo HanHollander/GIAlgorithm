@@ -285,6 +285,22 @@ def test2(filepathname):
     print(">total time:", total_end_time - total_start_time)
     print(">isomorphism classes:", classes)
 
+def test3(filepathname):
+    d = os.path.dirname(__file__)
+
+    filename = os.path.join(d, filepathname)
+
+    with open(filename) as f:
+        GL, options = load_graph(f, Graph, True)
+
+    with open(filename) as f:
+        HL, options = load_graph(f, Graph, True)
+
+    for i in range(0, len(GL)):
+        I, result, aut = graph_isomorphism(GL[i], HL[i])
+        print(aut)
+
+test3('bonusAut5')
 test2('cubes5.grl')
 # test git
 

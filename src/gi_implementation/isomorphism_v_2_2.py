@@ -244,7 +244,7 @@ def colourize(graph: 'Graph', recolour):
     return colouring_dict, partitions, current_colour + 1
 
 
-def test(filepathname):
+def self_automorphisms(filepathname):
     d = os.path.dirname(__file__)
 
     filename = os.path.join(d, filepathname)
@@ -270,7 +270,7 @@ def test(filepathname):
     print("result =", result)
     print("automorphisms =", aut)
 
-def test2(filepathname):
+def isomorphisms_list(filepathname):
     d = os.path.dirname(__file__)
 
     filename = os.path.join(d, filepathname)
@@ -314,16 +314,25 @@ def test2(filepathname):
                         if added == False:
                             classes.append(pair)
                 end_time = time.time()
+
                 print("-> computation time:", end_time - start_time, "seconds")
                 print("-> automorphisms:", aut)
-                print("-> result:", result, "\n")
+                print("-> result:", result)
     total_end_time = time.time()
     print(">total time:", total_end_time - total_start_time)
     print(">isomorphism classes:", classes)
-#
-test('bonusAut1.gr')
-# test2('bigtrees1.grl')
 
-# eg4_1026.grl
-# >total time: 18.395026922225952
-# >isomorphism classes: [[0, 1], [2, 3]]
+def self_automorphisms_list(filepathname):
+    d = os.path.dirname(__file__)
+
+    filename = os.path.join(d, filepathname)
+
+    with open(filename) as f:
+        GL, options = load_graph(f, Graph, True)
+
+    with open(filename) as f:
+        HL, options = load_graph(f, Graph, True)
+
+    for i in range(0, len(GL)):
+        I, result, aut = graph_isomorphism(GL[i], HL[i])
+        print(aut)

@@ -234,15 +234,15 @@ def colourize(graph: 'Graph', recolour):
     return colouring_dict, partitions, current_colour + 1
 
 
-def test():
+def self_automorphisms(filepathname):
     d = os.path.dirname(__file__)
 
-    filename = os.path.join(d, 'eg3.gr')
+    filename = os.path.join(d, filepathname)
 
     with open(filename) as f:
         G = load_graph(f, Graph, False)
 
-    filename = os.path.join(d, 'eg4.gr')
+    filename = os.path.join(d, filepathname)
 
     with open(filename) as f:
         H = load_graph(f, Graph, False)
@@ -259,7 +259,8 @@ def test():
 
     print("result =", result)
 
-def test2(filepathname):
+
+def isomorphisms_list(filepathname):
     d = os.path.dirname(__file__)
 
     filename = os.path.join(d, filepathname)
@@ -309,8 +310,3 @@ def test2(filepathname):
     total_end_time = time.time()
     print(">total time:", total_end_time - total_start_time)
     print(">isomorphism classes:", classes)
-
-test2('cubes5.grl')
-
-# test git
-
